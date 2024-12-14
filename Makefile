@@ -1,5 +1,6 @@
 CPP=g++
-CFLAGS=
+CFLAGS=-g -Wall
+LDFLAGS=-lm
 OPTFLAGS=-O3 -ffast-math
 MPIFLAGS=-DMPI
 
@@ -8,5 +9,5 @@ NVCCFLAGS=-DCUDA
 
 PYTHON=python3
 
-serial: main.cpp data.cpp
-	$(CPP) $^ $@ $(CFLAGS) $(OPTFLAGS)
+serial: main.cpp data.cpp serial.cpp
+	$(CPP) $^ -o $@ $(CFLAGS) $(OPTFLAGS)
