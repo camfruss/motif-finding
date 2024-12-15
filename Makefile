@@ -1,4 +1,4 @@
-CPP=g++
+CPP=g++ -std=c++20
 CFLAGS=-g -Wall
 LDFLAGS=-lm
 OPTFLAGS=-O3 -ffast-math

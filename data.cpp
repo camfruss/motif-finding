@@ -1,3 +1,5 @@
+#include "algorithm"
+#include "iostream"
 #include "random"
 #include "set"
 #include "string"
@@ -13,9 +15,35 @@ class Data
             std::size_t sequence_length = 1'000
         ) : m_numSequences { num_sequences }, 
             m_sequenceLength { sequence_length }, 
-            m_motifs { generate_motifs(motif_lengths) }, 
-            m_sequences(num_sequences, generate_sequence()) 
+            m_motifs { generate_motifs(motif_lengths) }
         {
+            m_sequences.resize(m_numSequences);
+            std::generate(begin(m_sequences), end(m_sequences), [this]() {
+                return this->generate_sequence();
+            });
+        }
+
+        const std::vector<std::string> sequences() 
+        {
+            return m_sequences;
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const Data& obj)
+        {
+            os << "Motifs:\n";
+            for (const auto& motif : obj.m_motifs) {
+                os << motif << "\n";
+            }    
+
+            std::size_t count {};
+            for (const auto& seq : obj.m_sequences) {
+                os << "\n> sequence " << count+1 << "\n";  // std::format supported in g++ 13.1
+                for (std::size_t i {}; i < seq.length(); i+=80) {
+                    os << seq.substr(i, 80) << "\n";
+                }
+                ++count;
+            }
+            return os;
         }
 
     private:
@@ -27,14 +55,14 @@ class Data
         const std::size_t m_numSequences; 
         const std::size_t m_sequenceLength;
         const std::vector<std::string> m_motifs;
-        const std::vector<std::string> m_sequences;    
+        std::vector<std::string> m_sequences;    
 
-        inline char generate_nucleotide()
+        inline char generate_nucleotide() 
         {
             return ms_nucleotideMap[ms_discreteDistr(ms_numGen)];
         }
 
-        std::vector<std::string> generate_motifs(const std::vector<std::size_t>& motif_lengths)
+        std::vector<std::string> generate_motifs(const std::vector<std::size_t>& motif_lengths) 
         {
             std::vector<std::string> result {};
             for (const auto& size : motif_lengths) {
@@ -49,7 +77,7 @@ class Data
 
         // Generates a sequence with a set of motifs with lengths specified in m_motifLengths
         // returns: a string consisting of the alphabet {A, C, T, G}
-        std::string generate_sequence()
+        std::string generate_sequence() 
         {
             std::string result {};
             result.reserve(m_sequenceLength);
@@ -67,8 +95,9 @@ class Data
             
                 bool valid { true };
                 std::vector<std::size_t> tmp {};
-                do {
-                    std::size_t pos { dist(ms_numGen) };
+                std::size_t pos;
+                do {  // WARNING: may cause an infinite loop if too many motifs 
+                    pos = dist(ms_numGen);
                     for (std::size_t i { pos }; i < pos + motif.size(); ++i) {
                         if (positions.count(i) || i == m_sequenceLength) { 
                             valid = false; 
@@ -77,7 +106,7 @@ class Data
                         tmp.push_back(i);
                     } 
                 } while (!valid);
-                result.insert(pos, motif);
+                result.replace(pos, motif.size(), motif);
                 positions.insert(begin(tmp), end(tmp));                    
 
             }
@@ -85,4 +114,3 @@ class Data
             return result; 
         }
 };
-
