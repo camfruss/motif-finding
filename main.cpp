@@ -1,8 +1,7 @@
-#include "data.cpp"
-
 #include "cstdio"
 #include "vector"
 
+#include "data.hpp"
 
 int main() {    
     std::vector<std::size_t> motif_lengths { 10 };       
