@@ -10,18 +10,18 @@ namespace utility {
         std::mt19937 num_gen { rand_device() };
         std::discrete_distribution<> discrete_distr { 25, 25, 25, 25 };
 
-        std::unordered_map<int, char> nucleotide_map =  { {0, 'A'}, {1, 'C'}, {2, 'T'}, {3, 'G'} };
-        std::unordered_map<int, char> encoding_map =  { {'A', 0}, {'C', 1}, {'T', 2}, {'G', 3} };
+        std::unordered_map<std::size_t, char> nucleotide_map =  { {0, 'A'}, {1, 'C'}, {2, 'T'}, {3, 'G'} };
+        std::unordered_map<char, std::size_t> encoding_map =  { {'A', 0}, {'C', 1}, {'T', 2}, {'G', 3} };
     }
    
     // c must be in {A, C, T, G} 
-    inline int encode(char c)
+    inline std::size_t encode(char c)
     {
         return encoding_map[c];
     }
 
     // i must be in {0, 1, 2, 3}
-    inline char decode(int i)
+    inline char decode(std::size_t i)
     {
         return nucleotide_map[i];
     }

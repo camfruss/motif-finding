@@ -8,6 +8,7 @@ sample a new starting position weighted by scores
 */
 #include "algorithm"
 #include "array"
+#include "cassert"
 #include "string"
 #include "vector"
 
@@ -23,10 +24,12 @@ Serial<T>::Serial(const Data& data)
 }
 
 template <typename T>
-void Serial<T>::find_motifs(std::size_t k)
+std::vector<std::size_t> Serial<T>::find_motifs(std::size_t k)
 {
-    auto positions { init_positions(k) }; 
-    auto pwm { init_pwm(positions) };
+    auto [num_sequences, sequence_length] { m_data.size() };
+
+    std::vector<std::size_t> positions { init_positions(k) }; 
+    auto pwm { init_pwm(k, positions) };
 
     // TODO: experiment with different convergence criterion...
     // scoring metric -> sum of scores of complete iteration
@@ -40,12 +43,18 @@ void Serial<T>::find_motifs(std::size_t k)
         return iter_count++ < max_iters;
     };
 
+    std::size_t withheld_index { 0 }; 
+    std::vector<std::size_t> scores(sequence_length);  // technically seq_len - k
+    std::size_t sampled_index { 0 };
     while (!has_converged()) {
-
-        std::size_t withheld_index { 0 }; 
-        update_pwm();
-        
+        update_pwm(pwm, withheld_index);
+        scores = score(pwm, withheld_index);  // TODO
+        sampled_index = sample(scores);  // TODO
+        positions[withheld_index] = sampled_index; 
+        withheld_index = (withheld_index + 1) % num_sequences; 
     }
+
+    return positions;
 }
 
 template <typename T>
@@ -89,8 +98,21 @@ std::vector<std::size_t> Serial<T>::init_positions(std::size_t end_buffer)
 }
 
 template <typename T>
-void Serial<T>::init_pwm(int k)
+std::vector<T> Serial<T>::init_pwm(int k, std::vector<std::size_t>& positions)
 {
+    std::vector<T> result(4*k, 0);
+
+    assert(m_data.sequences().size() == positions.size());
+    for (std::size_t i {}; i < positions.size(); ++i) {
+        auto starting_pos { positions[i] };
+        auto seq { m_data.sequences()[i] };
+        for (std::size_t j { starting_pos }; j < starting_pos + k; ++j) {
+            std::size_t idx { 4*i + utility::encode(seq[j]) };
+            ++result[idx];    
+        }
+    }
+
+    return result;
 }
 
 template <typename T>

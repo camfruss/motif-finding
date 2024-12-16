@@ -6,7 +6,7 @@ template <typename T>
 class Serial {
     public: 
         Serial(const Data& data);
-        void find_motifs(std::size_t k);
+        [[nodiscard]] std::vector<std::size_t> find_motifs(std::size_t k);
 
     private:
         const std::array<T, 4> m_background;
