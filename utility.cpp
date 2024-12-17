@@ -10,8 +10,11 @@ std::vector<std::size_t> utility::rand_indices(
     std::size_t end_buffer, 
     std::size_t count
 ) {
+    std::random_device rand_device {};
+	std::mt19937 num_gen { rand_device() };
+
     std::vector<std::size_t> result {};
-    std::uniform_int_distribution<std::size_t> dist(0, max);
+    std::uniform_int_distribution<std::size_t> dist(0, max-end_buffer);
     std::set<std::size_t> positions {};
 
     for (std::size_t i {}; i < count; ++i) {
@@ -25,8 +28,10 @@ std::vector<std::size_t> utility::rand_indices(
                 if (positions.count(i) || i == max) { 
                     valid = false; 
                     tmp.clear();
-                }
-                tmp.push_back(i);
+					break;
+                } else {
+					tmp.push_back(i);
+				}
             } 
         } while (!valid);
         

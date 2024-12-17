@@ -7,14 +7,14 @@
 namespace utility {
     namespace {
         std::random_device rand_device {};
-        std::mt19937 num_gen { rand_device() };
+		std::mt19937 num_gen { rand_device() };
         std::discrete_distribution<> discrete_distr { 25, 25, 25, 25 };
 
         std::unordered_map<std::size_t, char> nucleotide_map =  { {0, 'A'}, {1, 'C'}, {2, 'T'}, {3, 'G'} };
         std::unordered_map<char, std::size_t> encoding_map =  { {'A', 0}, {'C', 1}, {'T', 2}, {'G', 3} };
     }
    
-    // c must be in {A, C, T, G} 
+	// c must be in {A, C, T, G} 
     inline std::size_t encode(char c)
     {
         return encoding_map[c];

@@ -7,6 +7,8 @@ For serial portion of the report:
 - do basic profiling of where the code spends time
 - timing as a function of number of motifs included in sequences
 - as a function of motif length
+- as function of inaccuracies w/in motif
+- timing with varying pseudocounts
 
 For MPI:
 - convergence

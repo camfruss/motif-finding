@@ -8,7 +8,7 @@ NVCCFLAGS=-DCUDA
 
 PYTHON=python3
 
-SOURCES=main.cpp data.cpp serial.cpp utility.cpp
+SOURCES=main.cpp data.cpp utility.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 DEPS=data.hpp serial.hpp utility.hpp
 

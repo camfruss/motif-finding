@@ -10,6 +10,8 @@
 #include "data.hpp"
 #include "utility.hpp"
 
+#include "iostream"
+
 Data::Data(
     const std::vector<std::size_t>& motif_lengths, 
     std::size_t num_sequences,
@@ -70,7 +72,7 @@ std::string Data::generate_sequence()
 {
     std::string result {};
     result.reserve(m_sequenceLength);
-    
+   
     // create initial values
     for (std::size_t i {}; i < m_sequenceLength; ++i) {
         result.push_back(utility::rand_nucleotide());
