@@ -6,15 +6,15 @@
 #include "serial.hpp"
 
 int main() {    
-    std::vector<std::size_t> motif_lengths { 10 };       
+    std::vector<std::size_t> motif_lengths { 3 };       
 	std::size_t num_sequences { 10 };
-	std::size_t sequence_length { 100 };
+	std::size_t sequence_length { 10 };
 
-    Data data { motif_lengths }; // , num_sequences, sequence_length };
+    Data data { motif_lengths, num_sequences, sequence_length };
 	std::cout << data << std::endl;
 
 	Serial<float> serial { data };
-	std::vector<std::size_t> ending_positions { serial.find_motifs(10, 1) };
+	std::vector<std::size_t> ending_positions { serial.find_motifs(3, 1) };
 
 	auto str { std::accumulate(
 		std::next(begin(ending_positions)), 

@@ -3,6 +3,7 @@
 #include "algorithm"
 #include "array"
 #include "cassert"
+#include "cmath"
 #include "string"
 #include "vector"
 
@@ -26,13 +27,16 @@ class Serial {
         const Data m_data;
         const std::array<T, 4> m_background;
 
+		T sum_log_probs(T a, T b);
         std::array<T, 4> calculate_noise(std::size_t sample_size = 100);
         std::vector<std::size_t> init_positions(std::size_t end_buffer);
        
 		void update_counts(
 			std::vector<T>& pwm, 
-			int k, 
-			std::size_t position,
+			std::size_t seq_index,  // which sequence to consider
+			int k, 					// target motif length
+			T pseudocount,
+			std::size_t position,	// current idx where motif supposedly starts
 			bool increment = true
 		);
 
@@ -48,6 +52,7 @@ class Serial {
 			std::vector<T>& pwm, 
 			std::vector<std::size_t>& positions,
 			int k,
+			T pseudocount,
 			std::size_t old_withheld,
 			std::size_t new_withheld
 		);
@@ -83,26 +88,42 @@ std::vector<std::size_t> Serial<T>::find_motifs(std::size_t k, T pseudocount)
     // when motifs remain unchanged / only a few change
     // scoring metric + max_iterations
     // can add correctness plots as well
-    int max_iters { 1'000 }; // TODO: this should be a parameter
+    int max_iters { 5'000 }; // TODO: this should be a parameter
     auto has_converged = [&max_iters]() {
         static std::size_t iter_count {}; 
         return iter_count++ > max_iters;
     };
 
-	// auto normalize = std::transform(begin(pwm), end(pwm), begin(pwm), [&k](T x){
-	// 	return x / (k + 4*pseudocount);
-	// });
+	//for (const auto v : pwm) {
+	//	std::cout << v << " ";
+	//}
+	//std::cout << std::endl;
 
     do {
+		// std::cout << "beginning score" << std::endl;
         std::vector<T> scores { score(pwm, k, withheld) };
+		//for (const auto v : scores) {
+		//	std::cout << v << " ";
+		//}
+		//std::cout << std::endl;
+		// std::cout << "beginning sample" << std::endl;
         positions[withheld] = sample(scores);
 
         std::size_t new_withheld { (withheld + 1) % num_sequences }; 
-        update_pwm(pwm, positions, k, withheld, new_withheld);
+		// std::cout << "beginning pwm update" << std::endl;
+        update_pwm(pwm, positions, k, pseudocount, withheld, new_withheld);
 		withheld = new_withheld;
     } while (!has_converged());
 
     return positions;
+}
+
+template <typename T>
+T Serial<T>::sum_log_probs(T a, T b)
+{
+	return a > b ?
+		a + std::log1p(std::exp(b-a)) :
+		b + std::log1p(std::exp(a-b));
 }
 
 template <typename T>
@@ -147,15 +168,19 @@ std::vector<std::size_t> Serial<T>::init_positions(std::size_t end_buffer)
 
 template <typename T>
 void Serial<T>::update_counts(
-	std::vector<T>& pwm, 
+	std::vector<T>& pwm,
+	std::size_t seq_index,
 	int k, 
+	T pseudocount,
 	std::size_t position,
 	bool increment
 ) {
-	const auto& seq { m_data.sequences()[position] };
+	T delta = (increment ? 1 : -1) * 1 / (k + 4 * pseudocount) ;
+
+	const auto& seq { m_data.sequences()[seq_index].m_sequence };
 	for (std::size_t i { position }; i < position + k; ++i) {
-		std::size_t idx { 4*i + utility::encode(seq.m_sequence[i]) };
-		increment ? ++pwm[idx] : --pwm[idx];    
+		std::size_t idx { 4*i + utility::encode(seq[i]) };
+		pwm[idx] += delta;    
 	}
 }
 
@@ -166,12 +191,17 @@ std::vector<T> Serial<T>::init_pwm(
 	std::size_t withheld,
 	std::vector<std::size_t>& positions
 ) {
-    std::vector<T> pwm(4*k, pseudocount);
+	/*
+	In PWM, each nucleotide increases weight by 1/(k+4*pseudo)
+	and we start with pseduo/(k+4*pseudo)
+	*/
+	T normalized_default { pseudocount / (k + 4*pseudocount) };
+    std::vector<T> pwm(4*k, normalized_default);
 
     assert(m_data.sequences().size() == positions.size());
-    for (std::size_t i_pos {}; i_pos < positions.size(); ++i_pos) {
-		if (i_pos != withheld) {
-			update_counts(pwm, k, pseudocount, i_pos);
+    for (std::size_t i {}; i < positions.size(); ++i) {
+		if (i != withheld) {
+			update_counts(pwm, i, k, pseudocount, positions[i]);
 		}
 	}
 
@@ -183,13 +213,17 @@ void Serial<T>::update_pwm(
 	std::vector<T>& pwm, 
 	std::vector<std::size_t>& positions,
 	int k,
+	T pseudocount,
 	std::size_t old_withheld,
 	std::size_t new_withheld
 ) {
-	update_counts(pwm, k, positions[old_withheld]);
-	update_counts(pwm, k, positions[new_withheld], false);
+	// std::cout << "update_pwm: adding new" << std::endl;
+	update_counts(pwm, old_withheld, k, pseudocount, positions[old_withheld]);
+	// std::cout << "update_pwm: adding old" << std::endl;
+	update_counts(pwm, new_withheld, k, pseudocount, positions[new_withheld], false);
 }
 
+// O(seq_len * k)
 template <typename T>
 std::vector<T> Serial<T>::score(
 	std::vector<T>& pwm,
@@ -197,20 +231,35 @@ std::vector<T> Serial<T>::score(
 	std::size_t withheld
 ) {
 	// TODO: if very slow, add thresholding, where only sample if score > some value
-	// TODO: need to work with log probabilities
     auto [num_sequences, sequence_length] { m_data.size() };
 	std::vector<T> score(sequence_length-k);
 
-	// O(seq_len * k)
-	T tmp {};
-	auto& seq { m_data.sequences()[withheld] };
-	for (std::size_t i {}; i < sequence_length - k; ++i) {  // iterate over possible starting positions
+	const auto& seq { m_data.sequences()[withheld].m_sequence };
+	// std::cout << sequence_length << " " << k << std::endl;
+	for (std::size_t i {}; i < sequence_length-k; ++i) {  // iterate over possible starting positions
+		// std::cout << "scoring " << i << "th kmer";
+		T tmp {};
 		for (std::size_t j { }; j < k; ++j) {  // iterates over single kmer
-			std::size_t nucleotide_encoding { utility::encode(seq.m_sequence[i+j]) };
-			tmp *= pwm[4*j + nucleotide_encoding] / m_background[nucleotide_encoding]; 
+			std::size_t nucleotide_encoding { utility::encode(seq[i+j]) };
+			tmp += 
+				std::log(pwm[4*j + nucleotide_encoding]) -
+				std::log(m_background[nucleotide_encoding]); 
+			// std::cout << "tmp score" << tmp << " ";
 		}
+
 		score[i] = tmp;
+		// std::cout << std::endl;
 	}
+
+	T norm_factor {
+		std::accumulate(std::next(begin(score)), end(score), *begin(score), [this](T a, T b) {
+			return this->sum_log_probs(a, b);
+		})
+	};
+
+	std::transform(begin(score), end(score), begin(score), [&norm_factor](const T& x) {
+		return std::exp(x - norm_factor);
+	});
 	
 	return score;
 }
