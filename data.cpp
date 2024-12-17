@@ -1,6 +1,8 @@
 #include "algorithm"
+#include "format"
 #include "iostream"
 #include "random"
+#include "ranges"
 #include "set"
 #include "string"
 #include "unordered_map"
@@ -27,7 +29,7 @@ Data::Data(
     });
 }
 
-const std::vector<std::string>& Data::sequences() const
+const std::vector<Sequence>& Data::sequences() const
 {
     return m_sequences;
 }
@@ -39,18 +41,33 @@ const std::pair<std::size_t, std::size_t> Data::size() const
 
 std::ostream& operator<<(std::ostream& os, const Data& obj)
 {
-    os << "Motifs:\n";
-    for (const auto& motif : obj.m_motifs) {
-        os << motif << "\n";
+    os << "CONSENSUS MOTIFS:\n";
+	const auto& motifs { obj.m_motifs };
+    for (std::size_t i {}; i < motifs.size(); ++i) {
+        os << std::format("{:02} > {}\n", i+1, motifs[i]);
     }    
 
     std::size_t count {};
     for (const auto& seq : obj.m_sequences) {
-        os << "\n> sequence " << count+1 << "\n";  // std::format supported in g++ 13.1
-        for (std::size_t i {}; i < seq.length(); i+=80) {
-            os << seq.substr(i, 80) << "\n";
+	
+		// print out indices where motifs were inserted for each sequence
+		auto indices = seq.m_motifs | std::views::transform([](const Motif& m) {
+        	return std::to_string(m.m_startingIndex);
+		});
+		std::string motif_indices {
+			std::accumulate(
+				std::next(begin(indices)), end(indices), *begin(indices),
+				[](const std::string& a, const std::string& b) {
+		        	return a + ", " + b;
+				})
+		};
+		os << std::format("> sequence {} | motif indices: {}\n", count+1, motif_indices); // std::format supported in g++ 13.1
+
+		for (std::size_t i {}; i < seq.m_sequence.length(); i+=80) {
+            os << seq.m_sequence.substr(i, 100) << "\n";
         }
         ++count;
+
     }
     return os;
 }
@@ -68,23 +85,31 @@ std::vector<std::string> Data::generate_motifs()
     return result;
 }
 
-std::string Data::generate_sequence() 
+Sequence Data::generate_sequence() 
 {
-    std::string result {};
-    result.reserve(m_sequenceLength);
-   
-    // create initial values
+   	std::vector<Motif> motifs {};
+
+    // create initial valuesi
+	std::string sequence {};
+	sequence.reserve(m_sequenceLength);
     for (std::size_t i {}; i < m_sequenceLength; ++i) {
-        result.push_back(utility::rand_nucleotide());
+        sequence.push_back(utility::rand_nucleotide());
     }
 
     // insert motifs
     std::size_t end_buffer { *std::max_element(begin(m_motifLengths), end(m_motifLengths)) };
     auto indices { utility::rand_indices(m_sequenceLength, end_buffer, m_motifs.size()) }; 
     for (std::size_t i {}; i < m_motifs.size(); ++i) {
-        result.replace(indices[i], m_motifLengths[i], m_motifs[i]);
+        sequence.replace(indices[i], m_motifLengths[i], m_motifs[i]);
+		motifs.push_back({
+			m_motifs[i],
+			m_motifs[i], // TODO: obfuscate w/ some SMALL probability
+			indices[i],
+			i
+		});
     }
 
+	Sequence result { sequence, motifs };
     return result; 
 }
 

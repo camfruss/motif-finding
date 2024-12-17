@@ -73,10 +73,8 @@ std::vector<std::size_t> Serial<T>::find_motifs(std::size_t k, T pseudocount)
 {
     auto [num_sequences, sequence_length] { m_data.size() };
 
-	std::cout << "Init positions" << std::endl;
     std::vector<std::size_t> positions { init_positions(k) }; 
     std::size_t withheld { 0 }; 
-	std::cout << "Init pwm" << std::endl;
     std::vector<T> pwm { init_pwm(k, pseudocount, withheld, positions) };
 
     // TODO: experiment with different convergence criterion...
@@ -96,13 +94,10 @@ std::vector<std::size_t> Serial<T>::find_motifs(std::size_t k, T pseudocount)
 	// });
 
     do {
-		std::cout << "Beginning scoring" << std::endl;
         std::vector<T> scores { score(pwm, k, withheld) };
-		std::cout << "Beginning sampling" << std::endl;
         positions[withheld] = sample(scores);
 
         std::size_t new_withheld { (withheld + 1) % num_sequences }; 
-		std::cout << "Beginning pwm update" << std::endl;
         update_pwm(pwm, positions, k, withheld, new_withheld);
 		withheld = new_withheld;
     } while (!has_converged());
@@ -119,11 +114,11 @@ std::array<T, 4> Serial<T>::calculate_noise(std::size_t sample_size)
 
     char tmp;
     std::size_t samples_per_seq { (sample_size + num_sequences - 1) / num_sequences };
-    const std::vector<std::string> seqs { m_data.sequences() };
+    const std::vector<Sequence> seqs { m_data.sequences() };
     for (std::size_t i {}; i < num_sequences; ++i) {
         for (std::size_t j {}; j < samples_per_seq; ++j) {
             auto idx = utility::rand_indices(sequence_length)[0]; 
-            tmp = seqs[i][idx];    
+            tmp = seqs[i].m_sequence[idx];    
             ++result[utility::encode(tmp)];
         }
 	}
@@ -157,9 +152,9 @@ void Serial<T>::update_counts(
 	std::size_t position,
 	bool increment
 ) {
-	auto seq { m_data.sequences()[position] };
+	const auto& seq { m_data.sequences()[position] };
 	for (std::size_t i { position }; i < position + k; ++i) {
-		std::size_t idx { 4*i + utility::encode(seq[i]) };
+		std::size_t idx { 4*i + utility::encode(seq.m_sequence[i]) };
 		increment ? ++pwm[idx] : --pwm[idx];    
 	}
 }
@@ -208,10 +203,10 @@ std::vector<T> Serial<T>::score(
 
 	// O(seq_len * k)
 	T tmp {};
-	auto seq { m_data.sequences()[withheld] };
+	auto& seq { m_data.sequences()[withheld] };
 	for (std::size_t i {}; i < sequence_length - k; ++i) {  // iterate over possible starting positions
 		for (std::size_t j { }; j < k; ++j) {  // iterates over single kmer
-			std::size_t nucleotide_encoding { utility::encode(seq[i+j]) };
+			std::size_t nucleotide_encoding { utility::encode(seq.m_sequence[i+j]) };
 			tmp *= pwm[4*j + nucleotide_encoding] / m_background[nucleotide_encoding]; 
 		}
 		score[i] = tmp;

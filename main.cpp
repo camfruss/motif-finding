@@ -1,4 +1,5 @@
-#include "cstdio"
+#include "iostream"
+#include "string"
 #include "vector"
 
 #include "data.hpp"
@@ -9,15 +10,21 @@ int main() {
 	std::size_t num_sequences { 10 };
 	std::size_t sequence_length { 100 };
 
-    Data data { motif_lengths, num_sequences, sequence_length };
-	Serial<float> serial { data };
-	
-	std::cout << "Beginning motif search" << std::endl;
-	std::vector<std::size_t> starting_positions { serial.find_motifs(10, 1) };
-	
-
-	
+    Data data { motif_lengths }; // , num_sequences, sequence_length };
 	std::cout << data << std::endl;
+
+	Serial<float> serial { data };
+	std::vector<std::size_t> ending_positions { serial.find_motifs(10, 1) };
+
+	auto str { std::accumulate(
+		std::next(begin(ending_positions)), 
+		end(ending_positions),
+		std::to_string(*begin(ending_positions)),
+		[](const std::string& a, std::size_t b) {
+			return a + " " + std::to_string(b);
+		}
+	)};
+	std::cout << str << std::endl;
 
     return 0;
 }
