@@ -15,9 +15,9 @@
 #include "iostream"
 
 Data::Data(
-    const std::vector<std::size_t>& motif_lengths, 
-    std::size_t num_sequences,
-    std::size_t sequence_length
+    const std::vector<int>& motif_lengths, 
+    int num_sequences,
+    int sequence_length
 ) : m_numSequences { num_sequences },
     m_sequenceLength { sequence_length }, 
     m_motifLengths { motif_lengths }, 
@@ -34,7 +34,7 @@ const std::vector<Sequence>& Data::sequences() const
     return m_sequences;
 }
 
-const std::pair<std::size_t, std::size_t> Data::size() const
+const std::pair<int, int> Data::size() const
 {
     return { m_numSequences, m_sequenceLength };
 }
@@ -43,11 +43,11 @@ std::ostream& operator<<(std::ostream& os, const Data& obj)
 {
     os << "CONSENSUS MOTIFS:\n";
 	const auto& motifs { obj.m_motifs };
-    for (std::size_t i {}; i < motifs.size(); ++i) {
+    for (int i {}; i < motifs.size(); ++i) {
         os << std::format("{:02} > {}\n", i+1, motifs[i]);
     }    
 
-    std::size_t count {};
+    int count {};
     for (const auto& seq : obj.m_sequences) {
 	
 		// print out indices where motifs were inserted for each sequence
@@ -63,7 +63,7 @@ std::ostream& operator<<(std::ostream& os, const Data& obj)
 		};
 		os << std::format("> sequence {} | motif indices: {}\n", count+1, motif_indices); // std::format supported in g++ 13.1
 
-		for (std::size_t i {}; i < seq.m_sequence.length(); i+=80) {
+		for (int i {}; i < seq.m_sequence.length(); i+=80) {
             os << seq.m_sequence.substr(i, 100) << "\n";
         }
         ++count;
@@ -77,7 +77,7 @@ std::vector<std::string> Data::generate_motifs()
     std::vector<std::string> result {};
     for (const auto& size : m_motifLengths) {
         std::string tmp {};
-        for (std::size_t i {}; i < size; ++i) {
+        for (int i {}; i < size; ++i) {
             tmp.push_back(utility::rand_nucleotide());
         }
         result.push_back(tmp);
@@ -92,14 +92,14 @@ Sequence Data::generate_sequence()
     // create initial valuesi
 	std::string sequence {};
 	sequence.reserve(m_sequenceLength);
-    for (std::size_t i {}; i < m_sequenceLength; ++i) {
+    for (int i {}; i < m_sequenceLength; ++i) {
         sequence.push_back(utility::rand_nucleotide());
     }
 
     // insert motifs
-    std::size_t end_buffer { *std::max_element(begin(m_motifLengths), end(m_motifLengths)) };
+    int end_buffer { *std::max_element(begin(m_motifLengths), end(m_motifLengths)) };
     auto indices { utility::rand_indices(m_sequenceLength, end_buffer, m_motifs.size()) }; 
-    for (std::size_t i {}; i < m_motifs.size(); ++i) {
+    for (int i {}; i < m_motifs.size(); ++i) {
         sequence.replace(indices[i], m_motifLengths[i], m_motifs[i]);
 		motifs.push_back({
 			m_motifs[i],

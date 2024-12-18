@@ -13,35 +13,53 @@
 
 struct Motif
 {
+    /* Possibly obfuscated motif due to simulated read errors */
 	std::string m_motif;
+
+    /* True embedded motif before obfuscation */
 	std::string m_baseMotif;
-	std::size_t m_startingIndex;
-	std::size_t m_motifId;
+
+    /* Location where the motif starts */
+	int m_startingIndex;
+
+    /* Unique id of base motif */
+	int m_motifId;
 };
 
 struct Sequence
 {
+    /* Full ACTG representation */
 	std::string m_sequence;
+
+    /* Motifs within the sequence */
 	std::vector<Motif> m_motifs;
 };
 
 class Data
 {
     public: 
+        /* Initializes a sequence dataset with embedded motifs
+         * motif_lengths : vector containing the length of motifs to embed
+         */
         Data(
-            const std::vector<std::size_t>& motif_lengths, 
-            std::size_t num_sequences = 10,
-            std::size_t sequence_length = 1'000
+            const std::vector<int>& motif_lengths, 
+            int num_sequences = 10,
+            int sequence_length = 1'000
         );
+
+        /* Returns all created Sequences */
         const std::vector<Sequence>& sequences() const;
-        const std::pair<std::size_t, std::size_t> size() const;
+
+        /* Returns (num_sequences, sequence_length) */
+        const std::pair<int, int> size() const;
         
+        /* Allows for pretty printing Data */
         friend std::ostream& operator<<(std::ostream& os, const Data& obj);
 
     private:
-        const std::size_t m_numSequences; 
-        const std::size_t m_sequenceLength;
-        const std::vector<std::size_t> m_motifLengths;
+        const int m_numSequences; 
+        const int m_sequenceLength;
+        const std::vector<int> m_motifLengths;
 
 		/* simulated consensus motifs before random obfuscation */
         const std::vector<std::string> m_motifs;
