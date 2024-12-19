@@ -7,13 +7,14 @@ D=(256 512 1024 2048) # sequence length
 LOG_FILE="serial_times.txt"
 > $LOG_FILE  
 
+
 for a in "${A[@]}"; do
     echo "Running for a=$a..." | tee -a $LOG_FILE
     total_time=0
 
     for i in {1..10}; do
         start_time=$(date +%s.%N)
-        ./serial $a 16 16 $(512 - $(16 * $a))
+        ./serial $a 16 16 $((512 - $((16 * $a))))
         end_time=$(date +%s.%N)
 
         elapsed_time=$(echo "$end_time - $start_time" | bc)
@@ -31,7 +32,7 @@ for b in "${B[@]}"; do
 
     for i in {1..10}; do
         start_time=$(date +%s.%N)
-        ./serial 2 $b 16 $(512 - $(2 * $a))
+        ./serial 2 $b 16 $((512 - $((2 * $a))))
         end_time=$(date +%s.%N)
 
         elapsed_time=$(echo "$end_time - $start_time" | bc)
@@ -49,7 +50,7 @@ for c in "${C[@]}"; do
 
     for i in {1..10}; do
         start_time=$(date +%s.%N)
-        ./serial 2 16 $c $(512 - 32)
+        ./serial 2 16 $c $((512 - 32))
         end_time=$(date +%s.%N)
 
         elapsed_time=$(echo "$end_time - $start_time" | bc)
@@ -67,7 +68,7 @@ for d in "${D[@]}"; do
 
     for i in {1..10}; do
         start_time=$(date +%s.%N)
-        ./serial 2 16 16 $($d - 32)
+        ./serial 2 16 16 $(($d - 32))
         end_time=$(date +%s.%N)
 
         elapsed_time=$(echo "$end_time - $start_time" | bc)
