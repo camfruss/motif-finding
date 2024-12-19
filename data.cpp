@@ -44,7 +44,7 @@ std::ostream& operator<<(std::ostream& os, const Data& obj)
     os << "CONSENSUS MOTIFS:\n";
 	const auto& motifs { obj.m_motifs };
     for (int i {}; i < motifs.size(); ++i) {
-        os << std::format("{:02} > {}\n", i+1, motifs[i]);
+        os << (i + 1) << " > " << motifs[i] << std::endl;
     }    
 
     int count {};
@@ -61,7 +61,7 @@ std::ostream& operator<<(std::ostream& os, const Data& obj)
 		        	return a + ", " + b;
 				})
 		};
-		os << std::format("> sequence {} | motif indices: {}\n", count+1, motif_indices); // std::format supported in g++ 13.1
+		os << "> sequence " << (count + 1) << " | motif indices: " << motif_indices << '\n';
 
 		for (int i {}; i < seq.m_sequence.length(); i+=80) {
             os << seq.m_sequence.substr(i, 100) << "\n";

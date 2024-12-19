@@ -1,9 +1,9 @@
 #!/bin/bash
 
-A=(1 4 16 64) # num motifs
-B=(8 16 32 64) # motif length
-C=(16 32 64 128) # num sequences
-D=(128 512 2048 8192) # sequence length
+A=(1 2 4 8) # num motifs
+B=(8 12 16 20) # motif length
+C=(16 24 32 40) # num sequences
+D=(256 512 1024 2048) # sequence length
 LOG_FILE="serial_times.txt"
 > $LOG_FILE  
 
@@ -13,7 +13,7 @@ for a in "${A[@]}"; do
 
     for i in {1..10}; do
         start_time=$(date +%s.%N)
-        ./serial $a 16 64 512
+        ./serial $a 16 16 $(512 - $(16 * $a))
         end_time=$(date +%s.%N)
 
         elapsed_time=$(echo "$end_time - $start_time" | bc)
@@ -31,7 +31,7 @@ for b in "${B[@]}"; do
 
     for i in {1..10}; do
         start_time=$(date +%s.%N)
-        ./serial 4 $b 64 512
+        ./serial 2 $b 16 $(512 - $(2 * $a))
         end_time=$(date +%s.%N)
 
         elapsed_time=$(echo "$end_time - $start_time" | bc)
@@ -49,7 +49,7 @@ for c in "${C[@]}"; do
 
     for i in {1..10}; do
         start_time=$(date +%s.%N)
-        ./serial 4 16 $c 512
+        ./serial 2 16 $c $(512 - 32)
         end_time=$(date +%s.%N)
 
         elapsed_time=$(echo "$end_time - $start_time" | bc)
@@ -67,7 +67,7 @@ for d in "${D[@]}"; do
 
     for i in {1..10}; do
         start_time=$(date +%s.%N)
-        ./serial 4 16 64 $d
+        ./serial 2 16 16 $($d - 32)
         end_time=$(date +%s.%N)
 
         elapsed_time=$(echo "$end_time - $start_time" | bc)
