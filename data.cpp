@@ -1,5 +1,4 @@
 #include "algorithm"
-#include "format"
 #include "iostream"
 #include "random"
 #include "ranges"
