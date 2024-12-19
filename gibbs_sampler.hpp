@@ -5,12 +5,6 @@
 
 #include "data.hpp"
 
-// enum class Criteria 
-// {
-// 	MAX_REPEAT,
-// 	IS_STABLE
-// };
-
 struct Result
 {
 	std::vector<int> positions;
